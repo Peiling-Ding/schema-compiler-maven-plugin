@@ -8,13 +8,4 @@ import lombok.Setter;
 public class Schema {
     private String typeFile;
     private String enumFile;
-
-    public Schema(String typeFile, String enumFile) {
-        this.typeFile = typeFile;
-        this.enumFile = enumFile;
-    }
-
-    public Schema() {
-    }
-
 }
