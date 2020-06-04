@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -24,6 +25,7 @@ import java.lang.Exception;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 
 import com.pmi.data.Schema;
 import com.pmi.data.Type;
@@ -50,15 +52,15 @@ public class SchemaGeneratorMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException {
         try {
             Schema schema = readSchema(resourceDir);
-            String schemaDirPath = resourceDir.getPath() + "/schema";
+            Path schemaDirPath = Paths.get(resourceDir.getPath(), "schema");
             List<Type> types = readTypes(schemaDirPath, schema);
             getLog().info("Have successfully read following types: "
                     + Arrays.toString(types.stream().map(t -> t.getName()).toArray()));
             Path packageDirPath = mkdirs();
             genTypes(packageDirPath, types);
         } catch (Exception e) {
-            getLog().error(e.getMessage());
-            throw new MojoExecutionException(e.getMessage());
+            getLog().error(e);
+            throw new MojoExecutionException(e.getMessage(), e);
         }
     }
 
@@ -70,18 +72,18 @@ public class SchemaGeneratorMojo extends AbstractMojo {
         for (Type type : types) {
             String content = template.execute(type);
             Path sourceFilePath = Paths.get(packageDirPath.toString(), type.getName() + ".java");
-            Files.write(sourceFilePath, content.getBytes());
+            Files.write(sourceFilePath, content.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
         }
     }
 
     private Schema readSchema(File resourceDir) throws Exception {
-        String mainSchemaPath = resourceDir.getPath() + "/schema/main.yml";
-        return readYaml(mainSchemaPath, new TypeReference<Schema>() {
+        Path mainSchemaPath = Paths.get(resourceDir.getPath(), "schema", "main.yml");
+        return readYaml(mainSchemaPath.toString(), new TypeReference<Schema>() {
         });
     }
 
-    private List<Type> readTypes(String schemaDirPath, Schema schema) throws Exception {
-        Path typeFilePath = Paths.get(schemaDirPath, schema.getTypeFile());
+    private List<Type> readTypes(Path schemaDirPath, Schema schema) throws Exception {
+        Path typeFilePath = Paths.get(schemaDirPath.toString(), schema.getTypeFile());
         return readYaml(typeFilePath.toString(), new TypeReference<List<Type>>() {
         });
     }
