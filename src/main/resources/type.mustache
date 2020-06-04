@@ -12,7 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This is a auto generated class. You can see more details from here: https://github.com/Peiling-Ding/schema-compiler-maven-plugin
+ * This is a auto generated class. You can see more details from here:
+ * https://github.com/Peiling-Ding/schema-compiler-maven-plugin
  *
 {{#doc}}
  * {{doc}}
@@ -23,10 +24,10 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class {{name}} {
-    {{#fields}}
-    {{#doc}}
-    // {{doc}}
-    {{/doc}}
-    private {{{type}}} {{name}};
-    {{/fields}}
+  {{#fields}}
+  {{#doc}}
+  // {{doc}}
+  {{/doc}}
+  private {{{type}}} {{name}};
+  {{/fields}}
 }

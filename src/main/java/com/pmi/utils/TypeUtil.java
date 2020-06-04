@@ -21,10 +21,15 @@ public class TypeUtil {
   }
 
   public static String parseType(String type) {
-    if ("string".equals(type.toLowerCase())) {
-      return "String";
-    } else {
-      return type;
+    switch (type) {
+      case "string":
+        return "String";
+      case "integer":
+        return "Integer";
+      case "Int":
+        return "int";
+      default:
+        return type;
     }
   }
 }

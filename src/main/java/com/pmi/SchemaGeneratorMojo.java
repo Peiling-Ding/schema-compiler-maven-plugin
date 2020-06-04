@@ -3,6 +3,7 @@ package com.pmi;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.pmi.data.Enum;
 import com.pmi.data.Schema;
 import com.pmi.data.Type;
 import com.samskivert.mustache.Mustache;
@@ -17,14 +18,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.List;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
 
 /** Goal which generate source files of data modle based on the definiation in schema yaml files. */
 @Mojo(name = "generate-schema", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
@@ -36,35 +35,18 @@ public class SchemaGeneratorMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project.build.sourceDirectory}", required = true)
   private File sourceDir;
 
-  @Parameter(defaultValue = "${project}", required = true, readonly = true)
-  private MavenProject project;
-
   public void execute() throws MojoExecutionException {
     try {
       Schema schema = readSchema(resourceDir);
       Path schemaDirPath = Paths.get(resourceDir.getPath(), "schema");
       List<Type> types = readTypes(schemaDirPath, schema);
-      getLog()
-          .info(
-              "Have successfully read following types: "
-                  + Arrays.toString(types.stream().map(t -> t.getName()).toArray()));
+      List<Enum> enums = readEnums(schemaDirPath, schema);
       Path packageDirPath = mkdirs();
       genTypes(packageDirPath, types);
+      genEnums(packageDirPath, enums);
     } catch (Exception e) {
       getLog().error(e);
       throw new MojoExecutionException(e.getMessage(), e);
-    }
-  }
-
-  private void genTypes(Path packageDirPath, List<Type> types) throws IOException {
-    InputStream inputStream = getClass().getClassLoader().getResourceAsStream("type.mustache");
-    Reader templateReader = new InputStreamReader(inputStream);
-    Template template = Mustache.compiler().compile(templateReader);
-
-    for (Type type : types) {
-      String content = template.execute(type);
-      Path sourceFilePath = Paths.get(packageDirPath.toString(), type.getName() + ".java");
-      Files.write(sourceFilePath, content.getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
     }
   }
 
@@ -76,6 +58,11 @@ public class SchemaGeneratorMojo extends AbstractMojo {
   private List<Type> readTypes(Path schemaDirPath, Schema schema) throws Exception {
     Path typeFilePath = Paths.get(schemaDirPath.toString(), schema.getTypeFile());
     return readYaml(typeFilePath.toString(), new TypeReference<List<Type>>() {});
+  }
+
+  private List<Enum> readEnums(Path schemaDirPath, Schema schema) throws Exception {
+    Path enumFilePath = Paths.get(schemaDirPath.toString(), schema.getEnumFile());
+    return readYaml(enumFilePath.toString(), new TypeReference<List<Enum>>() {});
   }
 
   private <T> T readYaml(String filePath, TypeReference<T> ref) throws Exception {
@@ -95,6 +82,40 @@ public class SchemaGeneratorMojo extends AbstractMojo {
     }
 
     return result;
+  }
+
+  private void genTypes(Path packageDirPath, List<Type> types) throws IOException {
+    Template template = readTemplate("type.mustache");
+
+    for (Type type : types) {
+      String content = template.execute(type);
+      writeSourceFile(packageDirPath, type.getName(), content);
+    }
+  }
+
+  private void genEnums(Path packageDirPath, List<Enum> enums) throws IOException {
+    Template template = readTemplate("enum.mustache");
+
+    for (Enum e : enums) {
+      String content = template.execute(e);
+      writeSourceFile(packageDirPath, e.getName(), content);
+    }
+  }
+
+  private Template readTemplate(String templateFileName) {
+    InputStream inputStream = getClass().getClassLoader().getResourceAsStream(templateFileName);
+    Reader templateReader = new InputStreamReader(inputStream);
+    return Mustache.compiler().compile(templateReader);
+  }
+
+  private void writeSourceFile(Path packageDirPath, String fileName, String content)
+      throws IOException {
+    Path sourceFilePath = Paths.get(packageDirPath.toString(), fileName + ".java");
+    Files.write(
+        sourceFilePath,
+        content.getBytes(),
+        StandardOpenOption.CREATE,
+        StandardOpenOption.TRUNCATE_EXISTING);
   }
 
   private Path mkdirs() throws IOException {
