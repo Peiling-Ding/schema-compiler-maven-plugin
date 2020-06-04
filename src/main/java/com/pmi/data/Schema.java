@@ -6,6 +6,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Schema {
-    private String typeFile;
-    private String enumFile;
+  private String typeFile;
+  private String enumFile;
 }
