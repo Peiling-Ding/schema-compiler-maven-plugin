@@ -3,6 +3,7 @@ package com.pmi.data;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,6 +32,9 @@ public class {{name}} {
   {{#alias}}
   @JsonProperty("{{alias}}")
   {{/alias}}
+  {{#meta.serializeEnumAsInt}}
+  @JsonSerialize(using = IntegerEnumSerializer.class)
+  {{/meta.serializeEnumAsInt}}
   private {{{type}}} {{name}};
   {{/fields}}
 }

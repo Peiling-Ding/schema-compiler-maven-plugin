@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.text.MessageFormat;
 import java.util.List;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -43,28 +44,29 @@ public class SchemaGeneratorMojo extends AbstractMojo {
       Path packageDirPath = mkdirs();
       genTypes(packageDirPath, types);
       genEnums(packageDirPath, enums);
+      genOthers(packageDirPath);
     } catch (Exception e) {
       getLog().error(e);
       throw new MojoExecutionException(e.getMessage(), e);
     }
   }
 
-  private Schema readSchema(File resourceDir) {
+  private Schema readSchema(File resourceDir) throws Exception {
     Path mainSchemaPath = Paths.get(resourceDir.getPath(), "schema", "main.yml");
     return readYaml(mainSchemaPath.toString(), new TypeReference<Schema>() {});
   }
 
-  private List<Type> readTypes(Path schemaDirPath, Schema schema) {
+  private List<Type> readTypes(Path schemaDirPath, Schema schema) throws Exception {
     Path typeFilePath = Paths.get(schemaDirPath.toString(), schema.getTypeFile());
     return readYaml(typeFilePath.toString(), new TypeReference<List<Type>>() {});
   }
 
-  private List<Enum> readEnums(Path schemaDirPath, Schema schema) {
+  private List<Enum> readEnums(Path schemaDirPath, Schema schema) throws Exception {
     Path enumFilePath = Paths.get(schemaDirPath.toString(), schema.getEnumFile());
     return readYaml(enumFilePath.toString(), new TypeReference<List<Enum>>() {});
   }
 
-  private <T> T readYaml(String filePath, TypeReference<T> ref) {
+  private <T> T readYaml(String filePath, TypeReference<T> ref) throws Exception {
     File yamlFile = new File(filePath);
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
@@ -74,6 +76,10 @@ public class SchemaGeneratorMojo extends AbstractMojo {
       result = mapper.readValue(yamlFile, ref);
     } catch (IOException e) {
       getLog().error(e.toString());
+    }
+
+    if (result == null) {
+      throw new Exception(MessageFormat.format("Failed to parse yaml file {0}", filePath));
     }
 
     return result;
@@ -94,6 +100,15 @@ public class SchemaGeneratorMojo extends AbstractMojo {
     for (Enum e : enums) {
       String content = template.execute(e);
       writeSourceFile(packageDirPath, e.getName(), content);
+    }
+  }
+
+  private void genOthers(Path packageDirPath) throws IOException {
+    String[] files = new String[] {"IndexableEnum", "IntegerEnumSerializer"};
+    for (String file : files) {
+      Template template = readTemplate(file + ".mustache");
+      String content = template.execute(new Object());
+      writeSourceFile(packageDirPath, file, content);
     }
   }
 

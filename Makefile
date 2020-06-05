@@ -1,2 +1,2 @@
 build:
-	@mvn install
+	@mvn clean install

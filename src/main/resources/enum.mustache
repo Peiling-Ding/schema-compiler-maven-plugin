@@ -8,7 +8,7 @@ package com.pmi.data;
  * {{doc}}
 {{/doc}}
  */
-public enum {{name}} {
+public enum {{name}} implements IndexableEnum {
 {{#members}}
 {{key}}({{value}}){{^-last}},{{/-last}}{{#-last}};{{/-last}}
 {{/members}}
@@ -19,7 +19,7 @@ public enum {{name}} {
     this.value = value;
   }
 
-  public int value() {
+  public int getValue() {
     return this.value;
   }
 }
