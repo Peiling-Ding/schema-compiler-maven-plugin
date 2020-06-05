@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NumericNode;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -14,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
@@ -40,6 +42,24 @@ public class SchemaValidatorMojo extends AbstractMojo {
 
   @Parameter(defaultValue = "${project}")
   private MavenProject project;
+
+  private static Comparator<JsonNode> comparator =
+      new Comparator<JsonNode>() {
+        @Override
+        public int compare(JsonNode o1, JsonNode o2) {
+          if (o1.equals(o2)) {
+            return 0;
+          }
+          if ((o1 instanceof NumericNode) && (o2 instanceof NumericNode)) {
+            double d1 = ((NumericNode) o1).asDouble();
+            double d2 = ((NumericNode) o2).asDouble();
+            if (d1 == d2) {
+              return 0;
+            }
+          }
+          return 1;
+        }
+      };
 
   public void execute() throws MojoExecutionException {
     try {
@@ -82,7 +102,7 @@ public class SchemaValidatorMojo extends AbstractMojo {
               .readValue(filePath.toUri().toURL(), c);
       JsonNode acutal = objectMapper.readTree(objectMapper.writeValueAsString(o));
       JsonNode expected = objectMapper.readTree(filePath.toUri().toURL());
-      if (!acutal.equals(expected)) {
+      if (!acutal.equals(comparator, expected)) {
         throw new MojoExecutionException(
             MessageFormat.format(
                 "Schema validation failed;\nSchema file: {0}\nExpected JSON: {1}\nActual JSON:{2}",
