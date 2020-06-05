@@ -1,7 +1,9 @@
 package com.pmi.SchemaCompiler;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
@@ -70,11 +72,22 @@ public class SchemaValidatorMojo extends AbstractMojo {
   }
 
   private void validate(ObjectMapper objectMapper, Path filePath, Class c)
-      throws IOException, JsonParseException, JsonMappingException {
+      throws IOException, JsonParseException, JsonMappingException, MojoExecutionException {
     if (filePath.getFileName().toString().endsWith(".json")) {
       getLog().info(MessageFormat.format("Validating file: {0}", filePath.toString()));
-      Object o = objectMapper.readValue(filePath.toUri().toURL(), c);
-      getLog().info(objectMapper.writeValueAsString(o));
+      Object o =
+          objectMapper
+              .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+              .enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+              .readValue(filePath.toUri().toURL(), c);
+      JsonNode acutal = objectMapper.readTree(objectMapper.writeValueAsString(o));
+      JsonNode expected = objectMapper.readTree(filePath.toUri().toURL());
+      if (!acutal.equals(expected)) {
+        throw new MojoExecutionException(
+            MessageFormat.format(
+                "Schema validation failed;\nSchema file: {0}\nExpected JSON: {1}\nActual JSON:{2}",
+                filePath.toString(), expected, acutal));
+      }
     }
   }
 }
