@@ -28,6 +28,9 @@ public class {{name}} {
   {{#doc}}
   // {{doc}}
   {{/doc}}
+  {{#alias}}
+  @JsonProperty("{{alias}}")
+  {{/alias}}
   private {{{type}}} {{name}};
   {{/fields}}
 }
