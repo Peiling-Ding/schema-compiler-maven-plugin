@@ -99,6 +99,7 @@ public class SchemaValidatorMojo extends AbstractMojo {
           objectMapper
               .disable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
               .enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+              .enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY)
               .readValue(filePath.toUri().toURL(), c);
       JsonNode acutal = objectMapper.readTree(objectMapper.writeValueAsString(o));
       JsonNode expected = objectMapper.readTree(filePath.toUri().toURL());
