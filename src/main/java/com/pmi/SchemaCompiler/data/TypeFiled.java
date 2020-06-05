@@ -10,7 +10,7 @@ public class TypeFiled {
   private String name;
   private String alias;
   private String type;
-  private String meta;
+  private Meta meta;
   private String doc;
 
   public void setType(String type) {
