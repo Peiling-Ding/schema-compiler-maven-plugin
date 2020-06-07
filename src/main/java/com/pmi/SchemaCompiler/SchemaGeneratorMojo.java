@@ -1,11 +1,9 @@
 package com.pmi.SchemaCompiler;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.pmi.SchemaCompiler.data.Enum;
 import com.pmi.SchemaCompiler.data.Schema;
 import com.pmi.SchemaCompiler.data.Type;
+import com.pmi.SchemaCompiler.utils.YamlUtil;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
 import java.io.File;
@@ -17,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.text.MessageFormat;
 import java.util.List;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -38,9 +35,9 @@ public class SchemaGeneratorMojo extends AbstractMojo {
   public void execute() throws MojoExecutionException {
     try {
       Path schemaDirPath = Paths.get(resourceDir.getPath(), "schema");
-      Schema schema = readSchema(resourceDir);
-      List<Type> types = readTypes(schemaDirPath, schema);
-      List<Enum> enums = readEnums(schemaDirPath, schema);
+      Schema schema = YamlUtil.readSchema(resourceDir);
+      List<Type> types = YamlUtil.readTypes(schemaDirPath, schema);
+      List<Enum> enums = YamlUtil.readEnums(schemaDirPath, schema);
       Path packageDirPath = mkdirs();
       genTypes(packageDirPath, types);
       genEnums(packageDirPath, enums);
@@ -49,40 +46,6 @@ public class SchemaGeneratorMojo extends AbstractMojo {
       getLog().error(e);
       throw new MojoExecutionException(e.getMessage(), e);
     }
-  }
-
-  private Schema readSchema(File resourceDir) throws Exception {
-    Path mainSchemaPath = Paths.get(resourceDir.getPath(), "schema", "main.yml");
-    return readYaml(mainSchemaPath.toString(), new TypeReference<Schema>() {});
-  }
-
-  private List<Type> readTypes(Path schemaDirPath, Schema schema) throws Exception {
-    Path typeFilePath = Paths.get(schemaDirPath.toString(), schema.getTypeFile());
-    return readYaml(typeFilePath.toString(), new TypeReference<List<Type>>() {});
-  }
-
-  private List<Enum> readEnums(Path schemaDirPath, Schema schema) throws Exception {
-    Path enumFilePath = Paths.get(schemaDirPath.toString(), schema.getEnumFile());
-    return readYaml(enumFilePath.toString(), new TypeReference<List<Enum>>() {});
-  }
-
-  private <T> T readYaml(String filePath, TypeReference<T> ref) throws Exception {
-    File yamlFile = new File(filePath);
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-
-    T result = null;
-
-    try {
-      result = mapper.readValue(yamlFile, ref);
-    } catch (IOException e) {
-      getLog().error(e.toString());
-    }
-
-    if (result == null) {
-      throw new Exception(MessageFormat.format("Failed to parse yaml file {0}", filePath));
-    }
-
-    return result;
   }
 
   private void genTypes(Path packageDirPath, List<Type> types) throws IOException {
