@@ -36,7 +36,7 @@ public class TypeUtil {
   public static String getterName(String fieldName, String fieldType) {
     String firstChar = fieldName.substring(0, 1);
     String restChars = fieldName.substring(1);
-    if (fieldType.equals("boolean") || fieldType.equals("Boolean")) {
+    if (fieldType.equals("boolean")) {
       return MessageFormat.format("is{0}{1}", firstChar.toUpperCase(), restChars);
     } else {
       return MessageFormat.format("get{0}{1}", firstChar.toUpperCase(), restChars);

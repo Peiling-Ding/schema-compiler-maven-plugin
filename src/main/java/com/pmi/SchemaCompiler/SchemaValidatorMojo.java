@@ -20,7 +20,7 @@ import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -50,7 +50,7 @@ public class SchemaValidatorMojo extends AbstractMojo {
   @Parameter(property = "targetClass", required = true)
   private String targetClass;
 
-  private Type targetType;
+  private Map<String, Type> allTypes;
 
   private static Comparator<JsonNode> comparator =
       new Comparator<JsonNode>() {
@@ -72,6 +72,7 @@ public class SchemaValidatorMojo extends AbstractMojo {
 
   public void execute() throws MojoExecutionException {
     try {
+      loadSchemaTypes();
       ObjectMapper objectMapper = new ObjectMapper();
       Class c = getClassLoader(project).loadClass(targetClass);
       String projectBasePath = project.getBasedir().toPath().toString();
@@ -99,24 +100,15 @@ public class SchemaValidatorMojo extends AbstractMojo {
     return new URLClassLoader(urls, this.getClass().getClassLoader());
   }
 
-  private Type getTargetType(Class targetC) throws Exception {
-    if (this.targetType != null) {
-      return this.targetType;
-    }
+  private Type getTargetType(Class targetC) {
+    return this.allTypes.get(targetC.getSimpleName());
+  }
 
+  private void loadSchemaTypes() throws Exception {
     Path schemaDirPath = Paths.get(resourceDir.getPath(), "schema");
     Schema schema = YamlUtil.readSchema(resourceDir);
     List<Type> types = YamlUtil.readTypes(schemaDirPath, schema);
-    Optional<Type> type =
-        types.stream().filter(t -> t.getName().equals(targetC.getSimpleName())).findFirst();
-    if (type.isPresent()) {
-      this.targetType = type.get();
-      return this.targetType;
-    } else {
-      throw new Exception(
-          MessageFormat.format(
-              "Cannot find the target class {0} in schema definition.", targetC.getSimpleName()));
-    }
+    this.allTypes = types.stream().collect(Collectors.toMap(type -> type.getName(), type -> type));
   }
 
   private void validate(ObjectMapper objectMapper, Path filePath, Class targetC) throws Exception {
@@ -142,13 +134,27 @@ public class SchemaValidatorMojo extends AbstractMojo {
   }
 
   private void validateTargetType(Path filePath, Object target, Class targetC) throws Exception {
+    if (target instanceof List) {
+      List list = (List) target;
+      for (Object t : list) {
+        validateTargetType(filePath, t, t.getClass());
+      }
+    }
+
     Type type = getTargetType(targetC);
+    if (type == null) {
+      return;
+    }
+
     for (TypeFiled field : type.getFields()) {
       if (field.getMeta() != null) {
         String getterName = TypeUtil.getterName(field.getName(), field.getType());
         Method getterMethod = targetC.getMethod(getterName);
         Object fieldValue = getterMethod.invoke(target);
         validateFieldMeta(filePath, fieldValue, field);
+
+        // Recursively validate each field.
+        validateTargetType(filePath, fieldValue, fieldValue.getClass());
       }
     }
   }
@@ -161,7 +167,7 @@ public class SchemaValidatorMojo extends AbstractMojo {
               "Failed to parse file {0}, reason: {1} cannot be null.",
               filePath.toString(), field.getName()));
     }
-    // Add more validation here if necessary.
+    // More validations can be added here.
   }
 
   private boolean validateNullable(Object filedValue, Meta fieldMeta) {
