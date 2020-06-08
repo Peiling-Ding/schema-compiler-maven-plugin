@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class TypeFiled {
+public class Field {
   private String name;
   private String alias;
   private String type;

@@ -9,5 +9,5 @@ import lombok.Setter;
 public class Type {
   private String name;
   private String doc;
-  private List<TypeFiled> fields;
+  private List<Field> fields;
 }

@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NumericNode;
+import com.pmi.SchemaCompiler.data.Field;
 import com.pmi.SchemaCompiler.data.Meta;
 import com.pmi.SchemaCompiler.data.Schema;
 import com.pmi.SchemaCompiler.data.Type;
-import com.pmi.SchemaCompiler.data.TypeFiled;
 import com.pmi.SchemaCompiler.utils.TypeUtil;
 import com.pmi.SchemaCompiler.utils.YamlUtil;
 import java.io.File;
@@ -146,7 +146,7 @@ public class SchemaValidatorMojo extends AbstractMojo {
       return;
     }
 
-    for (TypeFiled field : type.getFields()) {
+    for (Field field : type.getFields()) {
       if (field.getMeta() != null) {
         String getterName = TypeUtil.getterName(field.getName(), field.getType());
         Method getterMethod = targetC.getMethod(getterName);
@@ -159,9 +159,8 @@ public class SchemaValidatorMojo extends AbstractMojo {
     }
   }
 
-  private void validateFieldMeta(Path filePath, Object filedValue, TypeFiled field)
-      throws Exception {
-    if (!validateNullable(filedValue, field.getMeta())) {
+  private void validateFieldMeta(Path filePath, Object fieldValue, Field field) throws Exception {
+    if (!validateNullable(fieldValue, field.getMeta())) {
       throw new Exception(
           MessageFormat.format(
               "Failed to parse file {0}, reason: {1} cannot be null.",
@@ -170,9 +169,9 @@ public class SchemaValidatorMojo extends AbstractMojo {
     // More validations can be added here.
   }
 
-  private boolean validateNullable(Object filedValue, Meta fieldMeta) {
+  private boolean validateNullable(Object fieldValue, Meta fieldMeta) {
     if (false == fieldMeta.getNullable()) {
-      return filedValue != null;
+      return fieldValue != null;
     } else {
       return true;
     }
