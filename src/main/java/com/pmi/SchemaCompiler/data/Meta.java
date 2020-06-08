@@ -8,4 +8,5 @@ import lombok.Setter;
 public class Meta {
   private Boolean nullable;
   private Boolean serializeEnumAsInt;
+  private String customValidator;
 }

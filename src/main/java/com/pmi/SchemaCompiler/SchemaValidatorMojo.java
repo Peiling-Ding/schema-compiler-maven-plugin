@@ -52,6 +52,8 @@ public class SchemaValidatorMojo extends AbstractMojo {
 
   private Map<String, Type> allTypes;
 
+  private URLClassLoader classLoader;
+
   private static Comparator<JsonNode> comparator =
       new Comparator<JsonNode>() {
         @Override
@@ -88,16 +90,20 @@ public class SchemaValidatorMojo extends AbstractMojo {
   }
 
   private ClassLoader getClassLoader(MavenProject project) throws Exception {
-    List<String> classpathElements = project.getCompileClasspathElements();
-    classpathElements.add(project.getBuild().getOutputDirectory());
-    classpathElements.add(project.getBuild().getTestOutputDirectory());
+    if (this.classLoader == null) {
+      List<String> classpathElements = project.getCompileClasspathElements();
+      classpathElements.add(project.getBuild().getOutputDirectory());
+      classpathElements.add(project.getBuild().getTestOutputDirectory());
 
-    URL urls[] = new URL[classpathElements.size()];
-    for (int i = 0; i < classpathElements.size(); ++i) {
-      urls[i] = new File(classpathElements.get(i).toString()).toURI().toURL();
+      URL urls[] = new URL[classpathElements.size()];
+      for (int i = 0; i < classpathElements.size(); ++i) {
+        urls[i] = new File(classpathElements.get(i).toString()).toURI().toURL();
+      }
+
+      this.classLoader = new URLClassLoader(urls, this.getClass().getClassLoader());
     }
 
-    return new URLClassLoader(urls, this.getClass().getClassLoader());
+    return this.classLoader;
   }
 
   private Type getTargetType(Class targetC) {
@@ -128,15 +134,16 @@ public class SchemaValidatorMojo extends AbstractMojo {
                 filePath.toString(), expected, acutal));
       }
 
-      validateTargetType(filePath, targetObject, targetC);
+      validateTargetType(filePath, null, targetObject, targetC);
     }
   }
 
-  private void validateTargetType(Path filePath, Object target, Class targetC) throws Exception {
+  private void validateTargetType(Path filePath, Object parent, Object target, Class targetC)
+      throws Exception {
     if (target instanceof List) {
       List list = (List) target;
       for (Object t : list) {
-        validateTargetType(filePath, t, t.getClass());
+        validateTargetType(filePath, parent, t, t.getClass());
       }
     }
 
@@ -150,27 +157,48 @@ public class SchemaValidatorMojo extends AbstractMojo {
         String getterName = TypeUtil.getterName(field.getName(), field.getType());
         Method getterMethod = targetC.getMethod(getterName);
         Object fieldValue = getterMethod.invoke(target);
-        validateFieldMeta(filePath, fieldValue, field);
+        validateFieldMeta(filePath, target, fieldValue, field);
 
         // Recursively validate each field.
-        validateTargetType(filePath, fieldValue, fieldValue.getClass());
+        validateTargetType(filePath, target, fieldValue, fieldValue.getClass());
       }
     }
   }
 
-  private void validateFieldMeta(Path filePath, Object fieldValue, Field field) throws Exception {
+  private void validateFieldMeta(Path filePath, Object parent, Object fieldValue, Field field)
+      throws Exception {
     if (!validateNullable(fieldValue, field.getMeta())) {
       throw new Exception(
           MessageFormat.format(
               "Failed to parse file {0}, reason: {1} cannot be null.",
               filePath.toString(), field.getName()));
     }
+
+    if (!customValidate(filePath, parent, fieldValue, field.getMeta())) {
+      throw new Exception(
+          MessageFormat.format(
+              "Failed to parse file {0}, reason: {1} did not pass custom validation.",
+              filePath.toString(), field.getName()));
+    }
+
     // More validations can be added here.
   }
 
   private boolean validateNullable(Object fieldValue, Meta fieldMeta) {
     if (false == fieldMeta.getNullable()) {
       return fieldValue != null;
+    } else {
+      return true;
+    }
+  }
+
+  private boolean customValidate(Path filePath, Object parent, Object fieldValue, Meta fieldMeta)
+      throws Exception {
+    if (null != fieldMeta.getCustomValidator()) {
+      Class validator = getClassLoader(project).loadClass(fieldMeta.getCustomValidator());
+      Method method = validator.getMethod("validate", Path.class, Object.class, Object.class);
+      Object result = method.invoke(null, filePath, parent, fieldValue);
+      return (boolean) result;
     } else {
       return true;
     }
