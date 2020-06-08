@@ -25,19 +25,18 @@ import org.apache.maven.plugins.annotations.Parameter;
 /** Goal which generate source files of data modle based on the definiation in schema yaml files. */
 @Mojo(name = "generate-schema", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
 public class SchemaGeneratorMojo extends AbstractMojo {
-  // The resource directory which should contain a schema folder having main.yml inside it.
-  @Parameter(defaultValue = "${project.build.resources[0].directory}", required = true)
-  private File resourceDir;
-
   @Parameter(defaultValue = "${project.build.sourceDirectory}", required = true)
   private File sourceDir;
 
+  // The directory which should contain main.yml inside it.
+  @Parameter(property = "schemaDir", required = true)
+  private String schemaDir;
+
   public void execute() throws MojoExecutionException {
     try {
-      Path schemaDirPath = Paths.get(resourceDir.getPath(), "schema");
-      Schema schema = YamlUtil.readSchema(resourceDir);
-      List<Type> types = YamlUtil.readTypes(schemaDirPath, schema);
-      List<Enum> enums = YamlUtil.readEnums(schemaDirPath, schema);
+      Schema schema = YamlUtil.readSchema(schemaDir);
+      List<Type> types = YamlUtil.readTypes(schemaDir, schema);
+      List<Enum> enums = YamlUtil.readEnums(schemaDir, schema);
       Path packageDirPath = mkdirs();
       genTypes(packageDirPath, types);
       genEnums(packageDirPath, enums);

@@ -38,9 +38,9 @@ public class SchemaValidatorMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project}")
   private MavenProject project;
 
-  // The resource directory which should contain a schema folder having main.yml inside it.
-  @Parameter(defaultValue = "${project.build.resources[0].directory}", required = true)
-  private File resourceDir;
+  // The directory which should contain main.yml inside it.
+  @Parameter(property = "schemaDir", required = true)
+  private String schemaDir;
 
   // The directory which contains all the JSON data to be validated.
   @Parameter(property = "dataDir", required = true)
@@ -105,9 +105,8 @@ public class SchemaValidatorMojo extends AbstractMojo {
   }
 
   private void loadSchemaTypes() throws Exception {
-    Path schemaDirPath = Paths.get(resourceDir.getPath(), "schema");
-    Schema schema = YamlUtil.readSchema(resourceDir);
-    List<Type> types = YamlUtil.readTypes(schemaDirPath, schema);
+    Schema schema = YamlUtil.readSchema(schemaDir);
+    List<Type> types = YamlUtil.readTypes(schemaDir, schema);
     this.allTypes = types.stream().collect(Collectors.toMap(type -> type.getName(), type -> type));
   }
 
