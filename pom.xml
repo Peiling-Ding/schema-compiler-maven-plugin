@@ -12,7 +12,7 @@
 
   <name>schema-compiler-maven-plugin Maven Plugin</name>
 
-  <url>https://github.com/Peiling-Ding/schema-compiler-maven-plugin</url>
+  <url>https://github.com/ParticleMedia/schema-compiler-maven-plugin</url>
 
   <prerequisites>
     <maven>${maven.version}</maven>
