@@ -125,8 +125,8 @@ public class SchemaValidatorMojo extends AbstractMojo {
               .enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
               .enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY)
               .readValue(filePath.toUri().toURL(), targetC);
-      JsonNode acutal = objectMapper.readTree(objectMapper.writeValueAsString(targetObject));
-      JsonNode expected = objectMapper.readTree(filePath.toUri().toURL());
+      JsonNode expected = objectMapper.readTree(objectMapper.writeValueAsString(targetObject));
+      JsonNode acutal = objectMapper.readTree(filePath.toUri().toURL());
       if (!acutal.equals(comparator, expected)) {
         throw new Exception(
             MessageFormat.format(
