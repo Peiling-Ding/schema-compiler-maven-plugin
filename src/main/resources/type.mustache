@@ -1,0 +1,40 @@
+package com.pmi.data;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * This is a auto generated class. You can see more details from here:
+ * https://github.com/Peiling-Ding/schema-compiler-maven-plugin
+ *
+{{#doc}}
+ * {{doc}}
+{{/doc}}
+ */
+@Getter
+@Setter
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class {{name}} {
+  {{#fields}}
+  {{#doc}}
+  // {{doc}}
+  {{/doc}}
+  {{#alias}}
+  @JsonProperty("{{alias}}")
+  {{/alias}}
+  {{#meta.serializeEnumAsInt}}
+  @JsonSerialize(using = IntegerEnumSerializer.class)
+  {{/meta.serializeEnumAsInt}}
+  private {{{type}}} {{name}};
+  {{/fields}}
+}

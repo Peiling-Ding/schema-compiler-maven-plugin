@@ -1,0 +1,29 @@
+package com.pmi.data;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import java.io.IOException;
+
+/**
+ * This is a auto generated class. You can see more details from here:
+ * https://github.com/Peiling-Ding/schema-compiler-maven-plugin
+ */
+public class IntegerEnumSerializer extends StdSerializer<IndexableEnum> {
+
+  private static final long serialVersionUID = 8301562937184701226L;
+
+  public IntegerEnumSerializer() {
+    super(IndexableEnum.class);
+  }
+
+  public IntegerEnumSerializer(Class<IndexableEnum> t) {
+    super(t);
+  }
+
+  @Override
+  public void serialize(IndexableEnum value, JsonGenerator gen, SerializerProvider provider)
+      throws IOException {
+    gen.writeNumber(value.getValue());
+  }
+}
