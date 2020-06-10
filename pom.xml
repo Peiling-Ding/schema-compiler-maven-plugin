@@ -163,13 +163,13 @@
     <repository>
       <uniqueVersion>false</uniqueVersion>
       <id>particle.plugin.release.local</id>
-      <name>Particle Repository</name>
+      <name>Particle Repository Plugin release</name>
       <url>${env.ARTIFACTORY_ADDR}/plugins-release-local</url>
     </repository>
     <snapshotRepository>
       <uniqueVersion>true</uniqueVersion>
       <id>particle.plugin.snapshot.local</id>
-      <name>Particle Repository</name>
+      <name>Particle Repository Plugin snapshot</name>
       <url>${env.ARTIFACTORY_ADDR}/plugins-snapshot-local</url>
     </snapshotRepository>
   </distributionManagement>
